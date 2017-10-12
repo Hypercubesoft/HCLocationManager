@@ -7,6 +7,7 @@
 
 import Foundation
 import CoreLocation
+import HCFramework
 
 open class HCLocationManager: NSObject, CLLocationManagerDelegate
 {

@@ -17,4 +17,6 @@ s.source           = { :git => "https://github.com/Hypercubesoft/HCLocationManag
 s.ios.deployment_target = "9.0"
 s.source_files = "HCLocationManager", "HCLocationManager/*"
 
+s.dependency 'HCFramework'
+
 end
