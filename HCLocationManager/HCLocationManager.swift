@@ -9,11 +9,32 @@ import Foundation
 import CoreLocation
 import HCFramework
 
+/// Struct with static variables used as names for NotificationCenter for specific events
+public struct HCLocationManagerNotification
+{
+    // MARK: Notification names
+    
+    /// Notification name for notification when location is updated
+    public static let locationUpdated = "HCLocationUpdated"
+    
+    /// Notification name for notification whem authorization status is changed
+    public static let authorizationStatusChanged = "HCAuthorizationStatusChanged"
+}
+
+/// HCLocationManager class used for handle some operations with user's location
 open class HCLocationManager: NSObject, CLLocationManagerDelegate
 {
+    // MARK: Basic properties
+    
+    /// CLLocationManager instance
     private var locationManager: CLLocationManager = CLLocationManager()
+    
+    /// Boolean value which indicates if tracking location is enabled
     private var isTrackingLocation: Bool = false
     
+    // MARK: - Shared instance
+    
+    /// Shared (singleton instance)
     open static let sharedManager: HCLocationManager = {
         
         let instance = HCLocationManager()
@@ -181,6 +202,57 @@ open class HCLocationManager: NSObject, CLLocationManagerDelegate
         }
     }
     
+    
+    /// Get detailed information about user's location (country, city, street,...)
+    ///
+    /// - Parameter completion: Completion handler which will be executed when and if detailed informations about user's location are fetched
+    open func getAdress(completion: @escaping ([CLPlacemark]) -> ()) {
+        
+        if CLLocationManager.locationServicesEnabled() {
+            switch(CLLocationManager.authorizationStatus()) {
+            case .notDetermined, .restricted, .denied:
+                print("No access")
+            case .authorizedAlways, .authorizedWhenInUse:
+                print("Access")
+                locationManager.requestWhenInUseAuthorization()
+                if (CLLocationManager.authorizationStatus() == CLAuthorizationStatus.authorizedWhenInUse ||
+                    CLLocationManager.authorizationStatus() == CLAuthorizationStatus.authorizedAlways){
+                    if let currentLocation = locationManager.location
+                    {
+                        self.getAddress(location: currentLocation, completion: completion)
+                    }
+                }
+            }
+        } else {
+            print("Location services are not enabled")
+        }
+    }
+    
+    
+    /// Get detailed informations (country, city, address,..) about given location
+    ///
+    /// - Parameters:
+    ///   - location: Location for which we need detailed informations
+    ///   - completion: Completion handler which will be executed when and if detailed informations about given location are fetched
+    open func getAddress(location:CLLocation, completion: @escaping ([CLPlacemark]) -> ())
+    {
+        let geoCoder = CLGeocoder()
+        geoCoder.reverseGeocodeLocation(location) { (placemarks, error) -> Void in
+            
+            if error != nil {
+                print("Error getting location: \(error?.localizedDescription ?? "No description")")
+                completion([])
+            }
+            else
+            {
+                if let placemarks = placemarks
+                {
+                    completion(placemarks)
+                }
+            }
+        }
+    }
+    
     // MARK: - Location Manager Delegate
     
     public func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation])
@@ -188,7 +260,7 @@ open class HCLocationManager: NSObject, CLLocationManagerDelegate
         let myCurrentLocation: CLLocation = locations.first!
         
         // Inform all about location update event. Observe this event to collect most recently retrieved user location.
-        HCAppNotify.postNotification("HCLocationUpdated", object: myCurrentLocation)
+        HCAppNotify.postNotification(HCLocationManagerNotification.locationUpdated, object: myCurrentLocation)
     }
     
     public func locationManager(_ manager: CLLocationManager, didFailWithError error: Error)
@@ -199,6 +271,6 @@ open class HCLocationManager: NSObject, CLLocationManagerDelegate
     public func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
         
         // Inform all about Authorization Status Change event. Observe this event to register Authorization Status Change event.
-        HCAppNotify.postNotification("HCAuthorizationStatusChanged", object: status as AnyObject)
+        HCAppNotify.postNotification(HCLocationManagerNotification.authorizationStatusChanged, object: status as AnyObject)
     }
 }
