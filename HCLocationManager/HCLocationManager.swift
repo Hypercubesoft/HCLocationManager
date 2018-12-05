@@ -102,15 +102,17 @@ open class HCLocationManager: NSObject, CLLocationManagerDelegate
     // MARK: - Location and Distance
     
     /// Configure locationManager object, start updating location, and request for permissions if needed.
-    open func startTrackingLocation()
+    open func startTrackingLocation(allowsBackgroundLocation: Bool = false)
     {
         if !isTrackingLocation {
             
             locationManager.requestLocation()
             locationManager.requestWhenInUseAuthorization()
-            locationManager.requestAlwaysAuthorization()
-            
-            locationManager.allowsBackgroundLocationUpdates = true
+            if allowsBackgroundLocation
+            {
+                locationManager.requestAlwaysAuthorization()
+                locationManager.allowsBackgroundLocationUpdates = allowsBackgroundLocation
+            }
             locationManager.desiredAccuracy = kCLLocationAccuracyBestForNavigation
             
             locationManager.startUpdatingLocation()
